@@ -179,7 +179,7 @@
 
   </main>
 
-  <!-- MODAL AUTH (SIN <form> PARA EVITAR RECARGAS EN MÓVIL) -->
+  <!-- MODAL AUTH -->
   <div id="auth-modal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
     <div class="glass max-w-md w-full p-6 rounded-2xl border border-slate-700 shadow-2xl relative max-h-[92vh] overflow-y-auto">
       <button type="button" onclick="closeAuthModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-xl p-1">
@@ -355,7 +355,7 @@
       renderAll();
     });
 
-    function syncDraft FromUser() {
+    function syncDraftFromUser() {
       draftPredictions = {};
       if (state.currentUser) {
         const u = state.users.find(x => x.email === state.currentUser.email);
@@ -857,6 +857,3 @@
   </script>
 </body>
 </html>
-
-      
-              
