@@ -289,5 +289,72 @@
         <div class="space-y-4 bg-slate-800/40 p-4 rounded-xl border border-slate-700/60">
           <div class="flex justify-between items-center">
             <h4 class="font-bold text-slate-200 uppercase tracking-wider text-xs">Partidos y Resultados Reales</h4>
-            <button type="button" onclick="addNewMatchField()" class="bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 border border-blue-500/30 px-3 py-1 rounded-lg text-
+            <button type="button" onclick="addNewMatchField()" class="bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 border border-blue-500/30 px-3 py-1 rounded-lg text-xs font-semibold transition">
+              + Añadir Partido
+            </button>
+          </div>
+          <div id="admin-matches-list" class="space-y-3"></div>
+          <button type="button" onclick="saveAdminMatches()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold py-2.5 rounded-lg text-sm transition">
+            Guardar Partidos y Resultados Finales
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const DEFAULT_PIN = "1234";
+    let tempAvatarBase64 = "";
+    let draftPredictions = {};
+    let authMode = 'register';
+
+    function safeGetStorage(key, fallback) {
+      try {
+        const item = localStorage.getItem(key);
+        return item ? JSON.parse(item) : fallback;
+      } catch (e) {
+        return fallback;
+      }
+    }
+
+    function safeSetStorage(key, val) {
+      try {
+        localStorage.setItem(key, JSON.stringify(val));
+      } catch (e) {}
+    }
+
+    function getNextFridayCutoff() {
+      const now = new Date();
+      const resultDate = new Date();
+      resultDate.setDate(now.getDate() + (5 + 7 - now.getDay()) % 7);
+      resultDate.setHours(15, 0, 0, 0);
+      return resultDate.toISOString().slice(0, 16);
+    }
+
+    let state = {
+      currentUser: safeGetStorage('porra_user', null),
+      adminAuthenticated: false,
+      settings: safeGetStorage('porra_settings', {
+        bote: 34,
+        targetAciertos: 3,
+        cutoffTime: getNextFridayCutoff()
+      }),
+      matches: safeGetStorage('porra_matches', [
+        { id: 'm1', home: 'Athletic Club', away: 'Espanyol', type: '1X2', result: '' },
+        { id: 'm2', home: 'Racing Club', away: 'Real Sociedad', type: '1X2', result: '' },
+        { id: 'm3', home: 'Osasuna', away: 'Málaga', type: 'EXACT', result: '' }
+      ]),
+      users: safeGetStorage('porra_registered_users', [
+        { email: 'ejemplo@porra.com', username: 'Iván (Ejemplo)', avatar: '', predictions: { m1: '1', m2: '2', m3: '2-0' } }
+      ])
+    };
+
+    window.addEventListener('DOMContentLoaded', () => {
+      syncDraftFromUser();
+      updateUserBadgeUI();
+      renderAll();
+    });
+
+    function syncDraft
+      
               
