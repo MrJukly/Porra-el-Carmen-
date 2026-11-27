@@ -1,13 +1,10 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Porra El Carmen</title>
-  <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     body { background-color: #0f172a; color: #f8fafc; font-family: system-ui, -apple-system, sans-serif; }
@@ -15,7 +12,6 @@
     .custom-scrollbar::-webkit-scrollbar { height: 6px; width: 6px; }
     .custom-scrollbar::-webkit-scrollbar-track { background: #0f172a; }
     .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
-    .avatar-img { object-fit: cover; border-radius: 9999px; }
   </style>
 </head>
 <body class="min-h-screen flex flex-col custom-scrollbar">
@@ -28,15 +24,17 @@
           ⚽
         </div>
         <div>
-          <h1 class="text-xl font-extrabold tracking-tight text-white flex items-center gap-2">
-            Porra El Carmen
-          </h1>
+          <h1 class="text-xl font-extrabold tracking-tight text-white">Porra El Carmen</h1>
           <p class="text-xs text-slate-400">Jornada Activa &bull; <span id="header-cutoff" class="text-emerald-400 font-medium">--</span></p>
         </div>
       </div>
 
-      <!-- User & Admin Buttons -->
       <div class="flex items-center space-x-2">
+        <button id="header-login-btn" onclick="openAuthModal()" class="bg-emerald-500 hover:bg-emerald-600 text-slate-950 px-3 py-1.5 rounded-lg text-sm font-bold flex items-center gap-1.5 transition">
+          <i class="fa-solid fa-user"></i>
+          <span>Entrar</span>
+        </button>
+
         <div id="user-badge" class="hidden items-center bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg text-sm text-slate-200">
           <div id="user-avatar-preview" class="w-7 h-7 rounded-full bg-slate-700 flex items-center justify-center text-xs mr-2 overflow-hidden border border-emerald-400">
             👤
@@ -46,6 +44,7 @@
             <i class="fa-solid fa-right-from-bracket"></i>
           </button>
         </div>
+
         <button onclick="openAdminModal()" class="bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 px-3 py-1.5 rounded-lg text-sm font-semibold flex items-center gap-1.5 transition">
           <i class="fa-solid fa-shield-halved"></i>
           <span>Admin</span>
@@ -83,26 +82,26 @@
     </div>
 
     <!-- TABS NAVIGATION -->
-    <div class="flex border-b border-slate-700 space-x-4">
-      <button onclick="switchTab('mi-apuesta')" id="tab-btn-mi-apuesta" class="pb-3 text-sm font-bold border-b-2 border-emerald-500 text-emerald-400 flex items-center gap-2">
+    <div class="flex border-b border-slate-700 space-x-4 overflow-x-auto">
+      <button onclick="switchTab('mi-apuesta')" id="tab-btn-mi-apuesta" class="pb-3 text-sm font-bold border-b-2 border-emerald-500 text-emerald-400 flex items-center gap-2 whitespace-nowrap">
         <i class="fa-solid fa-pen-to-square"></i> Mi Apuesta
       </button>
-      <button onclick="switchTab('muro')" id="tab-btn-muro" class="pb-3 text-sm font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2">
+      <button onclick="switchTab('muro')" id="tab-btn-muro" class="pb-3 text-sm font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2 whitespace-nowrap">
         <i class="fa-solid fa-table-cells"></i> Muro del Grupo
       </button>
-      <button onclick="switchTab('clasificacion')" id="tab-btn-clasificacion" class="pb-3 text-sm font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2">
+      <button onclick="switchTab('clasificacion')" id="tab-btn-clasificacion" class="pb-3 text-sm font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2 whitespace-nowrap">
         <i class="fa-solid fa-tv"></i> Clasificación / En Vivo
       </button>
     </div>
 
     <!-- TAB 1: MI APUESTA -->
     <section id="tab-mi-apuesta" class="space-y-4">
-      <div id="auth-banner" class="hidden bg-amber-500/10 border border-amber-500/30 p-4 rounded-xl text-amber-300 text-sm flex items-center justify-between">
+      <div id="auth-banner" class="bg-amber-500/10 border border-amber-500/30 p-4 rounded-xl text-amber-300 text-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div class="flex items-center gap-2">
           <i class="fa-solid fa-user-lock text-base"></i>
           <span>Inicia sesión o regístrate con tu nombre de usuario para meter tu quiniela.</span>
         </div>
-        <button onclick="openAuthModal()" class="bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold px-3 py-1.5 rounded-lg text-xs transition">
+        <button onclick="openAuthModal()" class="bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold px-4 py-2 rounded-lg text-xs transition shrink-0">
           Entrar / Registrarse
         </button>
       </div>
@@ -121,10 +120,7 @@
         </div>
 
         <form id="predictions-form" onsubmit="saveUserPredictions(event)" class="space-y-4">
-          <div id="matches-inputs-container" class="space-y-3">
-            <!-- Partidos renderizados dinámicamente -->
-          </div>
-
+          <div id="matches-inputs-container" class="space-y-3"></div>
           <div class="pt-2 flex justify-end">
             <button type="submit" id="save-btn" class="bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-extrabold px-6 py-3 rounded-xl shadow-lg transition flex items-center gap-2">
               <i class="fa-solid fa-floppy-disk"></i> Guardar Mis Pronósticos
@@ -147,24 +143,21 @@
           <div class="flex items-center gap-3 text-xs">
             <span class="flex items-center gap-1 text-emerald-400"><i class="fa-solid fa-circle-check"></i> Acierto</span>
             <span class="flex items-center gap-1 text-red-400"><i class="fa-solid fa-circle-xmark"></i> Fallo</span>
-            <span class="flex items-center gap-1 text-amber-400"><i class="fa-solid fa-tv"></i> En Directo</span>
+            <span class="flex items-center gap-1 text-sky-400"><i class="fa-solid fa-tv"></i> En Vivo</span>
           </div>
         </div>
 
         <div class="overflow-x-auto custom-scrollbar border border-slate-700/80 rounded-xl">
           <table class="w-full text-sm text-left text-slate-300">
             <thead class="text-xs uppercase bg-slate-800/90 text-slate-400 border-b border-slate-700">
-              <tr>
+              <tr id="muro-table-head">
                 <th scope="col" class="py-3 px-4 font-bold sticky left-0 bg-slate-800 z-10">Participante</th>
                 <th scope="col" class="py-3 px-3 text-center">Estado</th>
                 <th scope="col" class="py-3 px-3 text-center">Aciertos</th>
                 <th scope="col" class="py-3 px-3 text-center">Fallos</th>
-                <!-- Partidos como columnas dinámicas -->
-                <tbody id="muro-table-body" class="divide-y divide-slate-700/50">
-                  <!-- Render dinámico -->
-                </tbody>
               </tr>
             </thead>
+            <tbody id="muro-table-body" class="divide-y divide-slate-700/50"></tbody>
           </table>
         </div>
       </div>
@@ -179,164 +172,13 @@
           </h2>
           <p class="text-xs text-slate-400">Participantes que no han cometido ningún fallo en los partidos disputados.</p>
         </div>
-
-        <div id="vivos-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <!-- Tarjetas -->
-        </div>
+        <div id="vivos-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
       </div>
     </section>
 
   </main>
 
-  <!-- MODAL AUTH (LOGIN / REGISTRO) -->
+  <!-- MODAL AUTH -->
   <div id="auth-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="glass max-w-md w-full p-6 rounded-2xl border border-slate-700 shadow-2xl relative">
-      <button onclick="closeAuthModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-lg">
-        <i class="fa-solid fa-xmark"></i>
-      </button>
-
-      <!-- Selector de Modo -->
-      <div class="flex border-b border-slate-700 mb-6">
-        <button onclick="toggleAuthMode('login')" id="btn-mode-login" class="w-1/2 pb-2 text-center text-sm font-bold border-b-2 border-emerald-500 text-emerald-400">
-          Iniciar Sesión
-        </button>
-        <button onclick="toggleAuthMode('register')" id="btn-mode-register" class="w-1/2 pb-2 text-center text-sm font-bold border-b-2 border-transparent text-slate-400">
-          Registrarse
-        </button>
-      </div>
-
-      <!-- Formulario Login/Registro -->
-      <form id="auth-form" onsubmit="handleAuthSubmit(event)" class="space-y-4">
-        <div id="field-username" class="hidden space-y-1">
-          <label class="text-xs font-semibold text-slate-300 block">Nombre de Usuario / Apodo</label>
-          <input type="text" id="auth-username" placeholder="Ej: Jokin, Aitor, Carretillero..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
-        </div>
-
-        <!-- Selección de Foto / Avatar -->
-        <div id="field-avatar" class="hidden space-y-2">
-          <label class="text-xs font-semibold text-slate-300 block">Foto de Usuario / Avatar</label>
-          <div class="flex items-center gap-3">
-            <div id="avatar-file-preview" class="w-12 h-12 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-xl overflow-hidden">
-              👤
-            </div>
-            <input type="file" id="auth-avatar-file" accept="image/*" onchange="previewAvatarUpload(event)" class="text-xs text-slate-400 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-slate-800 file:text-emerald-400 hover:file:bg-slate-700">
-          </div>
-        </div>
-
-        <div class="space-y-1">
-          <label class="text-xs font-semibold text-slate-300 block">Correo Electrónico</label>
-          <input type="email" id="auth-email" required placeholder="tu@email.com" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
-        </div>
-
-        <div class="space-y-1">
-          <label class="text-xs font-semibold text-slate-300 block">Contraseña</label>
-          <input type="password" id="auth-password" required placeholder="••••••••" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
-        </div>
-
-        <!-- Aviso de Privacidad Estricta sin Publicidad -->
-        <div class="bg-slate-900/80 border border-slate-700 p-2.5 rounded-lg text-[11px] text-slate-400 flex items-start gap-2">
-          <i class="fa-solid fa-shield-halved text-emerald-400 text-sm mt-0.5"></i>
-          <span><strong>Privacidad garantizada:</strong> Tu correo únicamente se utiliza como nombre de usuario para iniciar sesión. Nunca recibirás publicidad, avisos comerciales ni spams de ningún tipo.</span>
-        </div>
-
-        <div id="auth-error" class="hidden text-xs text-red-400 bg-red-500/10 border border-red-500/20 p-2 rounded-lg"></div>
-
-        <button type="submit" id="auth-submit-btn" class="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold py-2.5 rounded-lg text-sm transition">
-          Entrar
-        </button>
-      </form>
-    </div>
-  </div>
-
-  <!-- MODAL ADMIN -->
-  <div id="admin-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="glass max-w-2xl w-full p-6 rounded-2xl border border-slate-700 shadow-2xl max-h-[90vh] overflow-y-auto custom-scrollbar relative">
-      <button onclick="closeAdminModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-lg">
-        <i class="fa-solid fa-xmark"></i>
-      </button>
-
-      <!-- Pantalla PIN Admin -->
-      <div id="admin-pin-screen" class="space-y-4 text-center py-6">
-        <div class="w-12 h-12 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center text-2xl mx-auto border border-amber-500/30">
-          <i class="fa-solid fa-lock"></i>
-        </div>
-        <h3 class="text-lg font-bold text-white">Acceso Administrador</h3>
-        <p class="text-xs text-slate-400">PIN de control (Por defecto: <code class="text-amber-300 bg-slate-800 px-1.5 py-0.5 rounded">1234</code>)</p>
-        <div class="max-w-xs mx-auto space-y-3">
-          <input type="password" id="admin-pin-input" placeholder="PIN de 4 dígitos" class="w-full text-center tracking-widest text-lg bg-slate-900 border border-slate-700 rounded-lg py-2 text-white focus:outline-none focus:border-amber-500">
-          <button onclick="verifyAdminPIN()" class="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold py-2 rounded-lg text-sm transition">
-            Acceder al Panel
-          </button>
-        </div>
-      </div>
-
-      <!-- Contenido Admin -->
-      <div id="admin-panel-content" class="hidden space-y-6">
-        <div class="border-b border-slate-700 pb-3 flex justify-between items-center">
-          <h3 class="text-lg font-bold text-white flex items-center gap-2">
-            <i class="fa-solid fa-sliders text-amber-400"></i> Panel de Control Admin
-          </h3>
-          <span class="text-xs bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2.5 py-0.5 rounded-full font-semibold">Modo Edición</span>
-        </div>
-
-        <div class="space-y-4 bg-slate-800/40 p-4 rounded-xl border border-slate-700/60">
-          <h4 class="text-sm font-bold text-slate-200 uppercase tracking-wider text-xs">Ajustes de Jornada</h4>
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div>
-              <label class="text-xs text-slate-400 block mb-1">Total Bote (€)</label>
-              <input type="number" id="admin-bote-input" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-white">
-            </div>
-            <div>
-              <label class="text-xs text-slate-400 block mb-1">Aciertos Objetivo</label>
-              <input type="number" id="admin-target-input" value="3" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-white">
-            </div>
-            <div>
-              <label class="text-xs text-slate-400 block mb-1">Cierre Automático (Fecha/Hora)</label>
-              <input type="datetime-local" id="admin-cutoff-input" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-xs text-white">
-            </div>
-          </div>
-          <button onclick="saveGeneralSettings()" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-4 py-1.5 rounded-lg text-xs transition">
-            Guardar Ajustes Generales
-          </button>
-        </div>
-
-        <div class="space-y-4 bg-slate-800/40 p-4 rounded-xl border border-slate-700/60">
-          <div class="flex justify-between items-center">
-            <h4 class="text-sm font-bold text-slate-200 uppercase tracking-wider text-xs">Partidos & Resultados Reales</h4>
-            <button onclick="addNewMatchField()" class="bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 border border-blue-500/30 px-3 py-1 rounded-lg text-xs font-semibold transition">
-              + Añadir Partido
-            </button>
-          </div>
-
-          <div id="admin-matches-list" class="space-y-3">
-            <!-- Partidos -->
-          </div>
-
-          <button onclick="saveAdminMatches()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold py-2 rounded-lg text-sm transition">
-            Guardar Partidos y Resultados Finales
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    const DEFAULT_PIN = "1234";
-    let tempAvatarBase64 = "";
-
-    let state = {
-      currentUser: JSON.parse(localStorage.getItem('porra_user')) || null,
-      adminAuthenticated: false,
-      settings: JSON.parse(localStorage.getItem('porra_settings')) || {
-        bote: 36,
-        targetAciertos: 3,
-        cutoffTime: getNextFridayCutoff()
-      },
-      matches: JSON.parse(localStorage.getItem('porra_matches')) || [
-        { id: 'm1', home: 'Deportivo', away: 'Osasuna', type: '1X2', result: '2' },
-        { id: 'm2', home: 'Rayo', away: 'Celta', type: '1X2', result: '1' },
-        { id: 'm3', home: 'Athletic Club', away: 'Real Sociedad', type: 'EXACT', result: '1-1' }
-      ],
-      users: JSON.parse(localStorage.getItem('porra_registered_users')) || [
-        { email: 'miguel@porra.com', username: 'Miguel', avatar: '', predictions: { m1: '1', m2: '1', m3: '1-1' } },
-        { email: 'jokin@porra.com', username: 'Jokin', avatar: '', predictions: { m1: '1', m2: '1', m3: '1-0' } },
+    <div class="glass max-w-md w-full p-6 rounded-2xl border border-slate-700 shadow
+      
