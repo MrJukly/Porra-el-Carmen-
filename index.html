@@ -355,6 +355,508 @@
       renderAll();
     });
 
-    function syncDraft
+    function syncDraft FromUser() {
+      draftPredictions = {};
+      if (state.currentUser) {
+        const u = state.users.find(x => x.email === state.currentUser.email);
+        if (u && u.predictions) {
+          draftPredictions = { ...u.predictions };
+        }
+      }
+    }
+
+    function saveState() {
+      safeSetStorage('porra_settings', state.settings);
+      safeSetStorage('porra_matches', state.matches);
+      safeSetStorage('porra_registered_users', state.users);
+      if (state.currentUser) {
+        safeSetStorage('porra_user', state.currentUser);
+      } else {
+        try { localStorage.removeItem('porra_user'); } catch (e) {}
+      }
+      renderAll();
+    }
+
+    function openAuthModal(initialMode) {
+      if (initialMode) toggleAuthMode(initialMode);
+      document.getElementById('auth-error').classList.add('hidden');
+      document.getElementById('auth-modal').classList.remove('hidden');
+    }
+
+    function closeAuthModal() {
+      document.getElementById('auth-modal').classList.add('hidden');
+      document.getElementById('auth-error').classList.add('hidden');
+    }
+
+    function previewAvatarUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        const img = new Image();
+        img.onload = function() {
+          const canvas = document.createElement('canvas');
+          const size = 96;
+          canvas.width = size;
+          canvas.height = size;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, size, size);
+          tempAvatarBase64 = canvas.toDataURL('image/jpeg', 0.7);
+          document.getElementById('avatar-file-preview').innerHTML = `<img src="${tempAvatarBase64}" class="w-full h-full object-cover">`;
+        };
+        img.src = evt.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function toggleAuthMode(mode) {
+      authMode = mode;
+      const fieldUsername = document.getElementById('field-username');
+      const fieldAvatar = document.getElementById('field-avatar');
+      const btnLogin = document.getElementById('btn-mode-login');
+      const btnRegister = document.getElementById('btn-mode-register');
+      const submitBtn = document.getElementById('auth-submit-btn');
+      document.getElementById('auth-error').classList.add('hidden');
+
+      if (mode === 'register') {
+        fieldUsername.classList.remove('hidden');
+        fieldAvatar.classList.remove('hidden');
+        btnRegister.className = "w-1/2 pb-2.5 text-center text-sm font-bold border-b-2 border-emerald-500 text-emerald-400";
+        btnLogin.className = "w-1/2 pb-2.5 text-center text-sm font-bold border-b-2 border-transparent text-slate-400";
+        submitBtn.innerText = "Crear Cuenta y Entrar";
+      } else {
+        fieldUsername.classList.add('hidden');
+        fieldAvatar.classList.add('hidden');
+        btnLogin.className = "w-1/2 pb-2.5 text-center text-sm font-bold border-b-2 border-emerald-500 text-emerald-400";
+        btnRegister.className = "w-1/2 pb-2.5 text-center text-sm font-bold border-b-2 border-transparent text-slate-400";
+        submitBtn.innerText = "Iniciar Sesión";
+      }
+    }
+
+    function showAuthError(msg) {
+      const errorDiv = document.getElementById('auth-error');
+      errorDiv.innerText = msg;
+      errorDiv.classList.remove('hidden');
+    }
+
+    function handleAuthSubmit() {
+      const email = document.getElementById('auth-email').value.trim().toLowerCase();
+      const password = document.getElementById('auth-password').value.trim();
+      const username = document.getElementById('auth-username').value.trim();
+
+      if (!email || !email.includes('@')) {
+        showAuthError("Escribe un correo electrónico válido (ej: nombre@gmail.com).");
+        return;
+      }
+      if (!password) {
+        showAuthError("Escribe una contraseña para tu cuenta.");
+        return;
+      }
+
+      if (authMode === 'register') {
+        if (!username) {
+          showAuthError("Escribe tu Nombre de Usuario o Apodo.");
+          return;
+        }
+        const existing = state.users.find(u => u.email === email || u.username.toLowerCase() === username.toLowerCase());
+        if (existing) {
+          showAuthError("Ese correo o nombre de usuario ya existe. Prueba a iniciar sesión.");
+          return;
+        }
+        const newUser = { email, username, avatar: tempAvatarBase64, predictions: {} };
+        state.users.push(newUser);
+        state.currentUser = { email, username, avatar: tempAvatarBase64 };
+      } else {
+        const found = state.users.find(u => u.email === email);
+        if (!found) {
+          showAuthError("No existe ninguna cuenta con ese correo. Pulsa en 'Registrarse' arriba.");
+          return;
+        }
+        state.currentUser = { email: found.email, username: found.username, avatar: found.avatar || '' };
+      }
+
+      syncDraftFromUser();
+      saveState();
+      updateUserBadgeUI();
+      closeAuthModal();
+    }
+
+    function logout() {
+      state.currentUser = null;
+      draftPredictions = {};
+      try { localStorage.removeItem('porra_user'); } catch (e) {}
+      updateUserBadgeUI();
+      renderAll();
+    }
+
+    function updateUserBadgeUI() {
+      const badge = document.getElementById('user-badge');
+      const loginBtn = document.getElementById('header-login-btn');
+      const banner = document.getElementById('auth-banner');
+      const nameSpan = document.getElementById('user-display-name');
+      const avatarDiv = document.getElementById('user-avatar-preview');
+
+      if (state.currentUser) {
+        badge.classList.remove('hidden');
+        badge.classList.add('flex');
+        loginBtn.classList.add('hidden');
+        banner.classList.add('hidden');
+        nameSpan.innerText = state.currentUser.username;
+        avatarDiv.innerHTML = state.currentUser.avatar ? `<img src="${state.currentUser.avatar}" class="w-full h-full object-cover">` : `👤`;
+      } else {
+        badge.classList.add('hidden');
+        badge.classList.remove('flex');
+        loginBtn.classList.remove('hidden');
+        banner.classList.remove('hidden');
+      }
+    }
+
+    function renderAll() {
+      document.getElementById('header-cutoff').innerText = formatCutoffDate(state.settings.cutoffTime);
+      document.getElementById('info-bote').innerText = `${state.settings.bote} €`;
+      document.getElementById('info-target').innerText = `${state.settings.targetAciertos} Aciertos`;
+      document.getElementById('info-count').innerText = `${state.users.length} Jugadores`;
+
+      renderMyPredictionsForm();
+      renderMuroTable();
+      renderClasificacionVivos();
+    }
+
+    function formatCutoffDate(isoStr) {
+      if (!isoStr) return "--";
+      const d = new Date(isoStr);
+      if (isNaN(d.getTime())) return "--";
+      return d.toLocaleDateString('es-ES', { weekday: 'short', hour: '2-digit', minute: '2-digit' });
+    }
+
+    function renderMyPredictionsForm() {
+      const container = document.getElementById('matches-inputs-container');
+      container.innerHTML = '';
+
+      const isLocked = new Date() > new Date(state.settings.cutoffTime);
+      const statusBadge = document.getElementById('cutoff-status-badge');
+      const saveBtn = document.getElementById('save-btn');
+
+      if (isLocked) {
+        statusBadge.className = "px-2.5 py-1 rounded-full text-xs font-semibold bg-red-500/10 text-red-400 border border-red-500/30 self-start sm:self-auto";
+        statusBadge.innerText = "Plazo Cerrado";
+        saveBtn.disabled = true;
+        saveBtn.classList.add('opacity-50', 'cursor-not-allowed');
+      } else {
+        statusBadge.className = "px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 self-start sm:self-auto";
+        statusBadge.innerText = "Plazo Abierto";
+        saveBtn.disabled = false;
+        saveBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+      }
+
+      state.matches.forEach((m, idx) => {
+        const val = draftPredictions[m.id] || '';
+        const card = document.createElement('div');
+        card.className = "bg-slate-800/60 p-4 rounded-xl border border-slate-700 flex flex-col sm:flex-row items-center justify-between gap-4";
+
+        let inputHTML = '';
+        if (m.type === '1X2') {
+          inputHTML = `
+            <div class="flex items-center gap-2">
+              ${['1', 'X', '2'].map(opt => `
+                <button type="button" ${isLocked ? 'disabled' : ''} onclick="selectOption('${m.id}', '${opt}')" id="opt-${m.id}-${opt}" class="w-11 h-11 rounded-lg font-extrabold text-sm border transition ${val === opt ? 'bg-emerald-500 text-slate-950 border-emerald-400 shadow-md' : 'bg-slate-900 text-slate-300 border-slate-700 hover:border-slate-500'}">
+                  ${opt}
+                </button>
+              `).join('')}
+            </div>
+          `;
+        } else {
+          const parts = val.includes('-') ? val.split('-') : ['', ''];
+          inputHTML = `
+            <div class="flex items-center gap-2">
+              <input type="number" inputmode="numeric" min="0" max="9" placeholder="0" value="${parts[0]}" ${isLocked ? 'disabled' : ''} oninput="updateExactScore('${m.id}')" id="exact-home-${m.id}" class="w-12 h-11 text-center bg-slate-900 border border-slate-700 rounded-lg font-bold text-white focus:outline-none focus:border-emerald-500">
+              <span class="text-slate-400 font-bold">-</span>
+              <input type="number" inputmode="numeric" min="0" max="9" placeholder="0" value="${parts[1]}" ${isLocked ? 'disabled' : ''} oninput="updateExactScore('${m.id}')" id="exact-away-${m.id}" class="w-12 h-11 text-center bg-slate-900 border border-slate-700 rounded-lg font-bold text-white focus:outline-none focus:border-emerald-500">
+            </div>
+          `;
+        }
+
+        card.innerHTML = `
+          <div class="flex items-center gap-3">
+            <span class="text-xs font-bold bg-slate-700 text-slate-300 px-2.5 py-1 rounded-md">#${idx + 1}</span>
+            <span class="font-bold text-white text-sm sm:text-base">${m.home} <span class="text-xs text-slate-400 font-normal">VS</span> ${m.away}</span>
+          </div>
+          ${inputHTML}
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function selectOption(matchId, opt) {
+      if (!state.currentUser) {
+        openAuthModal('register');
+        return;
+      }
+      draftPredictions[matchId] = opt;
+      ['1', 'X', '2'].forEach(o => {
+        const btn = document.getElementById(`opt-${matchId}-${o}`);
+        if (btn) {
+          btn.className = o === opt
+            ? "w-11 h-11 rounded-lg font-extrabold text-sm border transition bg-emerald-500 text-slate-950 border-emerald-400 shadow-md"
+            : "w-11 h-11 rounded-lg font-extrabold text-sm border transition bg-slate-900 text-slate-300 border-slate-700 hover:border-slate-500";
+        }
+      });
+    }
+
+    function updateExactScore(matchId) {
+      if (!state.currentUser) {
+        openAuthModal('register');
+        return;
+      }
+      const home = document.getElementById(`exact-home-${matchId}`).value;
+      const away = document.getElementById(`exact-away-${matchId}`).value;
+      if (home !== '' && away !== '') {
+        draftPredictions[matchId] = `${home}-${away}`;
+      }
+    }
+
+    function saveUserPredictions() {
+      if (!state.currentUser) {
+        openAuthModal('register');
+        return;
+      }
+      const idx = state.users.findIndex(u => u.email === state.currentUser.email);
+      if (idx !== -1) {
+        state.users[idx].predictions = { ...draftPredictions };
+      } else {
+        state.users.push({ email: state.currentUser.email, username: state.currentUser.username, avatar: state.currentUser.avatar || '', predictions: { ...draftPredictions } });
+      }
+      saveState();
+      const fb = document.getElementById('save-feedback');
+      fb.innerText = "✅ Pronósticos guardados correctamente.";
+      fb.classList.remove('hidden');
+      setTimeout(() => fb.classList.add('hidden'), 3500);
+    }
+
+    function renderMuroTable() {
+      const tableHeadRow = document.getElementById('muro-table-head');
+      while (tableHeadRow.children.length > 4) {
+        tableHeadRow.removeChild(tableHeadRow.lastChild);
+      }
+
+      state.matches.forEach(m => {
+        const th = document.createElement('th');
+        th.className = "py-3 px-3 text-center whitespace-nowrap min-w-[110px]";
+        th.innerHTML = `
+          <div class="font-bold text-slate-200">${m.home} - ${m.away}</div>
+          <div class="text-[10px] text-amber-400 font-mono">Real: ${m.result || '?'}</div>
+        `;
+        tableHeadRow.appendChild(th);
+      });
+
+      const tbody = document.getElementById('muro-table-body');
+      tbody.innerHTML = '';
+
+      state.users.forEach(u => {
+        const stats = calculateUserStats(u);
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-slate-800/40 transition";
+
+        const statusBadge = stats.isVivo
+          ? `<span class="bg-sky-500/20 text-sky-300 border border-sky-500/40 px-2 py-0.5 rounded-full text-[11px] font-bold inline-flex items-center justify-center gap-1"><i class="fa-solid fa-tv text-[10px]"></i> VIVO</span>`
+          : `<span class="bg-red-500/10 text-red-400 border border-red-500/20 px-2 py-0.5 rounded-full text-[11px] font-medium">Fuera</span>`;
+
+        const avatarHTML = u.avatar ? `<img src="${u.avatar}" class="w-6 h-6 rounded-full object-cover border border-slate-600">` : `<div class="w-6 h-6 rounded-full bg-slate-700 flex items-center justify-center text-[10px]">👤</div>`;
+
+        let cellsHTML = `
+          <td class="py-3 px-4 font-bold text-white sticky left-0 bg-slate-900/95 z-10 flex items-center gap-2">
+            ${avatarHTML}
+            <span>${u.username}</span>
+          </td>
+          <td class="py-3 px-3 text-center">${statusBadge}</td>
+          <td class="py-3 px-3 text-center font-bold text-emerald-400">${stats.aciertos}</td>
+          <td class="py-3 px-3 text-center font-bold text-red-400">${stats.fallos}</td>
+        `;
+
+        state.matches.forEach(m => {
+          const userVal = u.predictions[m.id] || '-';
+          const realVal = m.result;
+          let icon = '';
+          if (!realVal || realVal === '') {
+            icon = `<span class="text-slate-400 text-xs">${userVal} <i class="fa-solid fa-clock text-amber-500/70 ml-1"></i></span>`;
+          } else if (userVal === realVal) {
+            icon = `<span class="text-emerald-400 font-bold bg-emerald-500/10 px-2 py-1 rounded border border-emerald-500/30">${userVal} <i class="fa-solid fa-check ml-1"></i></span>`;
+          } else {
+            icon = `<span class="text-red-400 font-semibold bg-red-500/10 px-2 py-1 rounded border border-red-500/20">${userVal} <i class="fa-solid fa-xmark ml-1"></i></span>`;
+          }
+          cellsHTML += `<td class="py-3 px-3 text-center">${icon}</td>`;
+        });
+
+        tr.innerHTML = cellsHTML;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function calculateUserStats(user) {
+      let aciertos = 0;
+      let fallos = 0;
+      let isVivo = true;
+      state.matches.forEach(m => {
+        const userVal = user.predictions[m.id];
+        const realVal = m.result;
+        if (realVal && realVal !== '') {
+          if (userVal === realVal) {
+            aciertos++;
+          } else {
+            fallos++;
+            isVivo = false;
+          }
+        }
+      });
+      return { aciertos, fallos, isVivo };
+    }
+
+    function renderClasificacionVivos() {
+      const container = document.getElementById('vivos-grid');
+      container.innerHTML = '';
+
+      const sortedUsers = [...state.users].sort((a, b) => {
+        const statsA = calculateUserStats(a);
+        const statsB = calculateUserStats(b);
+        if (statsA.isVivo !== statsB.isVivo) return statsB.isVivo ? 1 : -1;
+        return statsB.aciertos - statsA.aciertos;
+      });
+
+      sortedUsers.forEach(u => {
+        const stats = calculateUserStats(u);
+        const card = document.createElement('div');
+        card.className = `p-4 rounded-xl border flex justify-between items-center ${stats.isVivo ? 'bg-slate-800/80 border-sky-500/50 shadow-lg' : 'bg-slate-800/40 border-slate-700/60 opacity-80'}`;
+        const avatarHTML = u.avatar ? `<img src="${u.avatar}" class="w-9 h-9 rounded-full object-cover border border-slate-600">` : `<div class="w-9 h-9 rounded-full bg-slate-700 flex items-center justify-center text-sm">👤</div>`;
+
+        card.innerHTML = `
+          <div class="flex items-center gap-3">
+            ${avatarHTML}
+            <div class="space-y-0.5">
+              <div class="flex items-center gap-2">
+                <span class="font-extrabold text-white text-base">${u.username}</span>
+                ${stats.isVivo ? '<span class="text-[10px] bg-sky-500/20 text-sky-300 border border-sky-400/40 font-bold px-1.5 py-0.5 rounded inline-flex items-center gap-1"><i class="fa-solid fa-tv text-[9px]"></i> VIVO</span>' : ''}
+              </div>
+              <div class="text-xs text-slate-400 flex items-center gap-3">
+                <span class="text-emerald-400 font-semibold"><i class="fa-solid fa-check"></i> ${stats.aciertos} aciertos</span>
+                <span class="text-red-400 font-semibold"><i class="fa-solid fa-xmark"></i> ${stats.fallos} fallos</span>
+              </div>
+            </div>
+          </div>
+          <div class="text-right">
+            <span class="text-2xl font-black ${stats.isVivo ? 'text-sky-400' : 'text-slate-500'}">
+              ${stats.aciertos}/${state.settings.targetAciertos}
+            </span>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function switchTab(tabId) {
+      ['mi-apuesta', 'muro', 'clasificacion'].forEach(t => {
+        document.getElementById(`tab-${t}`).classList.add('hidden');
+        document.getElementById(`tab-btn-${t}`).className = "pb-3 text-sm font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2 whitespace-nowrap";
+      });
+      document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+      document.getElementById(`tab-btn-${tabId}`).className = "pb-3 text-sm font-bold border-b-2 border-emerald-500 text-emerald-400 flex items-center gap-2 whitespace-nowrap";
+    }
+
+    function openAdminModal() {
+      document.getElementById('admin-modal').classList.remove('hidden');
+      document.getElementById('admin-pin-error').classList.add('hidden');
+      if (!state.adminAuthenticated) {
+        document.getElementById('admin-pin-screen').classList.remove('hidden');
+        document.getElementById('admin-panel-content').classList.add('hidden');
+      } else {
+        showAdminContent();
+      }
+    }
+
+    function closeAdminModal() {
+      document.getElementById('admin-modal').classList.add('hidden');
+    }
+
+    function verifyAdminPIN() {
+      const pin = document.getElementById('admin-pin-input').value.trim();
+      const err = document.getElementById('admin-pin-error');
+      if (pin === DEFAULT_PIN) {
+        state.adminAuthenticated = true;
+        err.classList.add('hidden');
+        showAdminContent();
+      } else {
+        err.innerText = "PIN incorrecto (escribe 1234)";
+        err.classList.remove('hidden');
+      }
+    }
+
+    function showAdminContent() {
+      document.getElementById('admin-pin-screen').classList.add('hidden');
+      document.getElementById('admin-panel-content').classList.remove('hidden');
+      document.getElementById('admin-bote-input').value = state.settings.bote;
+      document.getElementById('admin-target-input').value = state.settings.targetAciertos;
+      document.getElementById('admin-cutoff-input').value = state.settings.cutoffTime;
+      renderAdminMatchesList();
+    }
+
+    function renderAdminMatchesList() {
+      const container = document.getElementById('admin-matches-list');
+      container.innerHTML = '';
+      state.matches.forEach((m, idx) => {
+        const item = document.createElement('div');
+        item.className = "bg-slate-900 p-3 rounded-lg border border-slate-700 flex flex-col sm:flex-row items-center gap-2";
+        item.innerHTML = `
+          <span class="text-xs font-bold text-slate-400">#${idx + 1}</span>
+          <input type="text" id="admin-home-${m.id}" value="${m.home}" placeholder="Local" class="bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-white w-full sm:flex-1">
+          <span class="text-xs text-slate-500 font-bold">VS</span>
+          <input type="text" id="admin-away-${m.id}" value="${m.away}" placeholder="Visitante" class="bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-white w-full sm:flex-1">
+          <select id="admin-type-${m.id}" class="bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-white w-full sm:w-auto">
+            <option value="1X2" ${m.type === '1X2' ? 'selected' : ''}>Signo (1X2)</option>
+            <option value="EXACT" ${m.type === 'EXACT' ? 'selected' : ''}>Resultado Exacto</option>
+          </select>
+          <input type="text" id="admin-result-${m.id}" value="${m.result || ''}" placeholder="Real (Ej: 1)" class="bg-slate-800 border border-amber-500/40 rounded px-2 py-1 text-xs text-amber-300 w-full sm:w-28 text-center font-bold">
+          <button type="button" onclick="deleteMatch('${m.id}')" class="text-red-400 hover:text-red-300 text-xs px-2 py-1">
+            <i class="fa-solid fa-trash"></i>
+          </button>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    function addNewMatchField() {
+      state.matches.push({ id: 'm_' + Date.now(), home: 'Equipo A', away: 'Equipo B', type: '1X2', result: '' });
+      renderAdminMatchesList();
+    }
+
+    function deleteMatch(matchId) {
+      state.matches = state.matches.filter(m => m.id !== matchId);
+      renderAdminMatchesList();
+    }
+
+    function saveGeneralSettings() {
+      state.settings.bote = parseFloat(document.getElementById('admin-bote-input').value) || 0;
+      state.settings.targetAciertos = parseInt(document.getElementById('admin-target-input').value) || 3;
+      state.settings.cutoffTime = document.getElementById('admin-cutoff-input').value;
+      saveState();
+      closeAdminModal();
+    }
+
+    function saveAdminMatches() {
+      state.matches.forEach(m => {
+        const homeInput = document.getElementById(`admin-home-${m.id}`);
+        const awayInput = document.getElementById(`admin-away-${m.id}`);
+        const typeInput = document.getElementById(`admin-type-${m.id}`);
+        const resultInput = document.getElementById(`admin-result-${m.id}`);
+        if (homeInput) m.home = homeInput.value.trim();
+        if (awayInput) m.away = awayInput.value.trim();
+        if (typeInput) m.type = typeInput.value;
+        if (resultInput) m.result = resultInput.value.trim();
+      });
+      saveState();
+      closeAdminModal();
+    }
+  </script>
+</body>
+</html>
+
       
               
