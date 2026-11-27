@@ -1,0 +1,1102 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Porra El Carmen</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body { background-color: #0f172a; color: #f8fafc; font-family: system-ui, -apple-system, sans-serif; }
+    .glass { background: rgba(30, 41, 59, 0.85); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
+    .custom-scrollbar::-webkit-scrollbar { height: 6px; width: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: #0f172a; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col custom-scrollbar">
+
+  <!-- HEADER -->
+  <header class="glass sticky top-0 z-40 px-4 py-3 shadow-lg border-b border-slate-700">
+    <div class="max-w-7xl mx-auto flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-full bg-emerald-500/20 border border-emerald-400 flex items-center justify-center text-emerald-400 font-bold text-xl">
+          ⚽
+        </div>
+        <div>
+          <h1 class="text-lg sm:text-xl font-extrabold tracking-tight text-white">Porra El Carmen</h1>
+          <p class="text-xs text-slate-400">Cierre: <span id="header-cutoff" class="text-emerald-400 font-medium">--</span></p>
+        </div>
+      </div>
+
+      <div class="flex items-center space-x-2">
+        <button type="button" id="header-login-btn" onclick="openAuthModal('register')" class="bg-emerald-500 hover:bg-emerald-600 text-slate-950 px-3 py-1.5 rounded-lg text-sm font-bold flex items-center gap-1.5 transition">
+          <i class="fa-solid fa-user-plus"></i>
+          <span>Entrar</span>
+        </button>
+
+        <div id="user-badge" class="hidden items-center bg-slate-800 border border-slate-700 px-2.5 py-1.5 rounded-lg text-sm text-slate-200">
+          <div id="user-avatar-preview" class="w-6 h-6 rounded-full bg-slate-700 flex items-center justify-center text-xs mr-2 overflow-hidden border border-emerald-400">
+            👤
+          </div>
+          <span id="user-display-name" class="font-semibold text-xs sm:text-sm">--</span>
+          <button type="button" onclick="logout()" title="Cerrar Sesión" class="ml-2.5 text-slate-400 hover:text-red-400 transition">
+            <i class="fa-solid fa-right-from-bracket"></i>
+          </button>
+        </div>
+
+        <!-- BOTÓN ADMIN: Visible solo para ADMIN_EMAIL -->
+        <button type="button" id="header-admin-btn" onclick="openAdminModal()" class="hidden bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 px-3 py-1.5 rounded-lg text-sm font-semibold items-center gap-1.5 transition">
+          <i class="fa-solid fa-shield-halved"></i>
+          <span>Admin</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="max-w-7xl mx-auto w-full flex-1 p-4 space-y-6">
+
+    <!-- Banners Infobar -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div class="glass p-4 rounded-xl flex items-center justify-between border-l-4 border-emerald-500">
+        <div>
+          <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider block">Bote Semanal</span>
+          <span id="info-bote" class="text-2xl font-black text-emerald-400">0 €</span>
+        </div>
+        <div class="w-12 h-12 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400 text-2xl">💰</div>
+      </div>
+      <div class="glass p-4 rounded-xl flex items-center justify-between border-l-4 border-blue-500">
+        <div>
+          <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider block">Aciertos Objetivo</span>
+          <span id="info-target" class="text-2xl font-black text-blue-400">3 Aciertos</span>
+        </div>
+        <div class="w-12 h-12 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-400 text-2xl">🎯</div>
+      </div>
+      <div class="glass p-4 rounded-xl flex items-center justify-between border-l-4 border-amber-500">
+        <div>
+          <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider block">Participantes</span>
+          <span id="info-count" class="text-2xl font-black text-amber-400">0 Jugadores</span>
+        </div>
+        <div class="w-12 h-12 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-400 text-2xl">👥</div>
+      </div>
+    </div>
+
+    <!-- TABS NAVIGATION -->
+    <div class="flex border-b border-slate-700 space-x-4 overflow-x-auto">
+      <button type="button" onclick="switchTab('mi-apuesta')" id="tab-btn-mi-apuesta" class="pb-3 text-sm font-bold border-b-2 border-emerald-500 text-emerald-400 flex items-center gap-2 whitespace-nowrap">
+        <i class="fa-solid fa-pen-to-square"></i> Mi Apuesta
+      </button>
+      <button type="button" onclick="switchTab('muro')" id="tab-btn-muro" class="pb-3 text-sm font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2 whitespace-nowrap">
+        <i class="fa-solid fa-table-cells"></i> Muro del Grupo
+      </button>
+      <button type="button" onclick="switchTab('clasificacion')" id="tab-btn-clasificacion" class="pb-3 text-sm font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2 whitespace-nowrap">
+        <i class="fa-solid fa-tv"></i> Clasificación / En Vivo
+      </button>
+      <button type="button" onclick="switchTab('resultados')" id="tab-btn-resultados" class="hidden pb-3 text-sm font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-200 items-center gap-2 whitespace-nowrap">
+        <i class="fa-solid fa-flag-checkered"></i> Poner Resultados
+      </button>
+    </div>
+
+    <!-- TAB 1: MI APUESTA -->
+    <section id="tab-mi-apuesta" class="space-y-4">
+      <div id="auth-banner" class="bg-amber-500/10 border border-amber-500/30 p-4 rounded-xl text-amber-300 text-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div class="flex items-center gap-2">
+          <i class="fa-solid fa-user-lock text-base"></i>
+          <span>Regístrate con tu nombre de usuario o inicia sesión para rellenar tu quiniela.</span>
+        </div>
+        <button type="button" onclick="openAuthModal('register')" class="bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold px-4 py-2 rounded-lg text-xs transition shrink-0">
+          Crear Cuenta / Entrar
+        </button>
+      </div>
+
+      <div class="glass p-5 rounded-2xl space-y-6">
+        <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-2 border-b border-slate-700/60 pb-3">
+          <div>
+            <h2 class="text-lg font-bold text-white flex items-center gap-2">
+              <i class="fa-solid fa-list-check text-emerald-400"></i> Rellenar Pronósticos
+            </h2>
+            <p class="text-xs text-slate-400">Marca tus resultados antes del cierre de jornada.</p>
+          </div>
+          <span id="cutoff-status-badge" class="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 self-start sm:self-auto">
+            Plazo Abierto
+          </span>
+        </div>
+
+        <div class="space-y-4">
+          <div id="matches-inputs-container" class="space-y-3">
+            <p class="text-xs text-slate-400 text-center py-4">Cargando partidos de la jornada...</p>
+          </div>
+          <div id="save-feedback" class="hidden text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 p-3 rounded-lg font-semibold"></div>
+          <div class="pt-2 flex justify-end">
+            <button type="button" id="save-btn" onclick="saveUserPredictions()" class="bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-extrabold px-6 py-3 rounded-xl shadow-lg transition flex items-center gap-2">
+              <i class="fa-solid fa-floppy-disk"></i> Guardar Mis Pronósticos
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: MURO DEL GRUPO -->
+    <section id="tab-muro" class="hidden space-y-4">
+      <div class="glass p-4 rounded-2xl space-y-4">
+        <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-2">
+          <div>
+            <h2 class="text-lg font-bold text-white flex items-center gap-2">
+              <i class="fa-solid fa-users text-blue-400"></i> Muro de Pronósticos del Grupo
+            </h2>
+            <p class="text-xs text-slate-400">Comparativa de pronósticos sincronizada en la nube.</p>
+          </div>
+          <div class="flex items-center gap-3 text-xs">
+            <span class="flex items-center gap-1 text-emerald-400"><i class="fa-solid fa-circle-check"></i> Acierto</span>
+            <span class="flex items-center gap-1 text-red-400"><i class="fa-solid fa-circle-xmark"></i> Fallo</span>
+            <span class="flex items-center gap-1 text-sky-400"><i class="fa-solid fa-tv"></i> En Vivo</span>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto custom-scrollbar border border-slate-700/80 rounded-xl">
+          <table class="w-full text-sm text-left text-slate-300">
+            <thead class="text-xs uppercase bg-slate-800/90 text-slate-400 border-b border-slate-700">
+              <tr id="muro-table-head">
+                <th scope="col" class="py-3 px-4 font-bold sticky left-0 bg-slate-800 z-10">Participante</th>
+                <th scope="col" class="py-3 px-3 text-center">Estado</th>
+                <th scope="col" class="py-3 px-3 text-center">Aciertos</th>
+                <th scope="col" class="py-3 px-3 text-center">Fallos</th>
+              </tr>
+            </thead>
+            <tbody id="muro-table-body" class="divide-y divide-slate-700/50"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: CLASIFICACIÓN / EN VIVO -->
+    <section id="tab-clasificacion" class="hidden space-y-4">
+      <div class="glass p-5 rounded-2xl space-y-4">
+        <div>
+          <h2 class="text-lg font-bold text-white flex items-center gap-2">
+            <i class="fa-solid fa-tv text-sky-400"></i> Seguimiento en Directo
+          </h2>
+          <p class="text-xs text-slate-400">Participantes sin fallos en los partidos terminados.</p>
+        </div>
+        <div id="vivos-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+      </div>
+    </section>
+
+    <!-- TAB 4: PONER RESULTADOS (SOLO ADMIN, SIN TOCAR PARTIDOS NI EQUIPOS) -->
+    <section id="tab-resultados" class="hidden space-y-4">
+      <div class="glass p-5 rounded-2xl space-y-5">
+        <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-2 border-b border-slate-700/60 pb-3">
+          <div>
+            <h2 class="text-lg font-bold text-white flex items-center gap-2">
+              <i class="fa-solid fa-flag-checkered text-amber-400"></i> Poner Resultados Finales
+            </h2>
+            <p class="text-xs text-slate-400">Solo escribe el resultado de los partidos ya guardados; los equipos y el tipo no se pueden alterar aquí.</p>
+          </div>
+          <span id="results-cutoff-badge" class="px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-800 text-slate-300 border border-slate-700 self-start sm:self-auto">
+            Estado del cierre: --
+          </span>
+        </div>
+
+        <div id="results-only-container" class="space-y-3"></div>
+
+        <div id="results-save-feedback" class="hidden text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 p-3 rounded-lg font-semibold"></div>
+
+        <div class="pt-2 flex justify-end">
+          <button type="button" id="btn-save-results-tab" onclick="saveResultsOnly()" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold px-6 py-3 rounded-xl shadow-lg transition flex items-center gap-2">
+            <i class="fa-solid fa-check-double"></i> Guardar Resultados
+          </button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MODAL AUTH -->
+  <div id="auth-modal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="glass max-w-md w-full p-6 rounded-2xl border border-slate-700 shadow-2xl relative max-h-[92vh] overflow-y-auto">
+      <button type="button" onclick="closeAuthModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-xl p-1">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <div class="flex border-b border-slate-700 mb-5 pr-6">
+        <button type="button" onclick="toggleAuthMode('register')" id="btn-mode-register" class="w-1/2 pb-2.5 text-center text-sm font-bold border-b-2 border-emerald-500 text-emerald-400">
+          Registrarse
+        </button>
+        <button type="button" onclick="toggleAuthMode('login')" id="btn-mode-login" class="w-1/2 pb-2.5 text-center text-sm font-bold border-b-2 border-transparent text-slate-400">
+          Iniciar Sesión
+        </button>
+      </div>
+
+      <div class="space-y-4">
+        <div id="field-username" class="space-y-1">
+          <label class="text-xs font-semibold text-slate-300 block">Nombre de Usuario / Apodo *</label>
+          <input type="text" id="auth-username" placeholder="Ej: Jokin, Aitor, Carretillero..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500">
+        </div>
+
+        <div id="field-avatar" class="space-y-2">
+          <label class="text-xs font-semibold text-slate-300 block">Foto de Perfil (Opcional)</label>
+          <div class="flex items-center gap-3">
+            <div id="avatar-file-preview" class="w-12 h-12 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-xl overflow-hidden shrink-0">
+              👤
+            </div>
+            <input type="file" id="auth-avatar-file" accept="image/*" onchange="previewAvatarUpload(event)" class="text-xs text-slate-400 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-slate-800 file:text-emerald-400">
+          </div>
+        </div>
+
+        <div class="space-y-1">
+          <label class="text-xs font-semibold text-slate-300 block">Correo Electrónico *</label>
+          <input type="email" id="auth-email" placeholder="tu@email.com" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500">
+        </div>
+
+        <div class="space-y-1">
+          <label class="text-xs font-semibold text-slate-300 block">Contraseña *</label>
+          <div class="relative flex items-center">
+            <input type="password" id="auth-password" placeholder="••••••••" class="w-full bg-slate-900 border border-slate-700 rounded-lg pl-3 pr-11 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500">
+            <button type="button" onclick="togglePasswordVisibility()" aria-label="Mostrar u ocultar contraseña" class="absolute right-2.5 text-slate-400 hover:text-emerald-400 p-1 transition">
+              <i id="auth-password-eye" class="fa-solid fa-eye"></i>
+            </button>
+          </div>
+          <div class="flex justify-end pt-0.5">
+            <button type="button" onclick="toggleForgotPasswordHelp()" class="text-[11px] text-amber-400 hover:text-amber-300 underline">
+              ¿Olvidaste tu contraseña?
+            </button>
+          </div>
+        </div>
+
+        <div id="forgot-password-box" class="hidden bg-amber-500/10 border border-amber-500/30 p-3 rounded-lg text-[11px] text-amber-200 space-y-1">
+          <p class="font-bold text-amber-300">Recuperación de contraseña:</p>
+          <p>Si olvidas tu contraseña, pídele al administrador que revise o actualice tu fila en <strong>Supabase → Table Editor → porra_users</strong>, o entra con tu cuenta de administrador para consultarlo.</p>
+        </div>
+
+        <div class="bg-slate-900/80 border border-slate-700 p-2.5 rounded-lg text-[11px] text-slate-400 flex items-start gap-2">
+          <i class="fa-solid fa-shield-halved text-emerald-400 text-sm mt-0.5"></i>
+          <span><strong>Cero publicidad:</strong> Tu correo solo sirve como identificador para guardar tus pronósticos.</span>
+        </div>
+
+        <div id="auth-error" class="hidden text-xs text-red-400 bg-red-500/10 border border-red-500/30 p-2.5 rounded-lg font-medium"></div>
+
+        <button type="button" id="auth-submit-btn" onclick="handleAuthSubmit()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-extrabold py-3 rounded-xl text-sm transition shadow-lg">
+          Crear Cuenta y Entrar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL ADMIN (Configuración de jornada y partidos) -->
+  <div id="admin-modal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="glass max-w-2xl w-full p-6 rounded-2xl border border-slate-700 shadow-2xl max-h-[90vh] overflow-y-auto custom-scrollbar relative">
+      <button type="button" onclick="closeAdminModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-xl p-1">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <div class="space-y-6">
+        <div class="border-b border-slate-700 pb-3 flex justify-between items-center pr-6">
+          <h3 class="text-lg font-bold text-white flex items-center gap-2">
+            <i class="fa-solid fa-sliders text-amber-400"></i> Panel de Control Admin
+          </h3>
+          <span class="text-xs bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2.5 py-0.5 rounded-full font-semibold">Administrador</span>
+        </div>
+
+        <div class="space-y-4 bg-slate-800/40 p-4 rounded-xl border border-slate-700/60">
+          <h4 class="font-bold text-slate-200 uppercase tracking-wider text-xs">Ajustes de Jornada</h4>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label class="text-xs text-slate-400 block mb-1">Total Bote (€)</label>
+              <input type="number" id="admin-bote-input" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-white">
+            </div>
+            <div>
+              <label class="text-xs text-slate-400 block mb-1">Aciertos Objetivo</label>
+              <input type="number" id="admin-target-input" value="3" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-white">
+            </div>
+            <div>
+              <label class="text-xs text-slate-400 block mb-1">Cierre Automático</label>
+              <input type="datetime-local" id="admin-cutoff-input" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-xs text-white">
+            </div>
+          </div>
+          <button type="button" id="btn-save-settings" onclick="saveGeneralSettings()" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-4 py-2 rounded-lg text-xs transition">
+            Guardar Ajustes Generales
+          </button>
+        </div>
+
+        <div class="space-y-4 bg-slate-800/40 p-4 rounded-xl border border-slate-700/60">
+          <div class="flex justify-between items-center">
+            <h4 class="font-bold text-slate-200 uppercase tracking-wider text-xs">Partidos y Resultados Reales</h4>
+            <button type="button" onclick="addNewMatchField()" class="bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 border border-blue-500/30 px-3 py-1 rounded-lg text-xs font-semibold transition">
+              + Añadir Partido
+            </button>
+          </div>
+          <div id="admin-matches-list" class="space-y-3"></div>
+          <button type="button" id="btn-save-matches" onclick="saveAdminMatches()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold py-2.5 rounded-lg text-sm transition">
+            Guardar Partidos y Resultados Finales
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = "https://ndhozfgghzznfwbvolcx.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_QK8KseKjbCMrzSjFQfKcoQ_iEckA9qL";
+    const ADMIN_EMAIL = "julen1313@gmail.com";
+
+    const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    let tempAvatarBase64 = "";
+    let draftPredictions = {};
+    let authMode = 'register';
+
+    function safeGetStorage(key, fallback) {
+      try {
+        const item = localStorage.getItem(key);
+        return item ? JSON.parse(item) : fallback;
+      } catch (e) {
+        return fallback;
+      }
+    }
+
+    function safeSetStorage(key, val) {
+      try {
+        localStorage.setItem(key, JSON.stringify(val));
+      } catch (e) {}
+    }
+
+    let state = {
+      currentUser: safeGetStorage('porra_user', null),
+      settings: {
+        bote: 34,
+        targetAciertos: 3,
+        cutoffTime: ""
+      },
+      matches: [],
+      users: []
+    };
+
+    function isAdminUser() {
+      return state.currentUser && state.currentUser.email && state.currentUser.email.toLowerCase() === ADMIN_EMAIL.toLowerCase();
+    }
+
+    function isCutoffClosed() {
+      if (!state.settings.cutoffTime) return false;
+      const cutoffDate = new Date(state.settings.cutoffTime);
+      if (isNaN(cutoffDate.getTime())) return false;
+      return new Date() > cutoffDate;
+    }
+
+    window.addEventListener('DOMContentLoaded', async () => {
+      updateUserBadgeUI();
+      await loadCloudData();
+    });
+
+    async function loadCloudData() {
+      try {
+        const { data: settingsData } = await sb.from('porra_settings').select('*').eq('id', 1).single();
+        if (settingsData) {
+          state.settings = {
+            bote: settingsData.bote,
+            targetAciertos: settingsData.target_aciertos,
+            cutoffTime: settingsData.cutoff_time || ""
+          };
+        }
+
+        const { data: matchesData } = await sb.from('porra_matches').select('*').order('sort_order', { ascending: true });
+        if (matchesData) {
+          state.matches = matchesData;
+        }
+
+        const { data: usersData } = await sb.from('porra_users').select('*');
+        if (usersData) {
+          state.users = usersData;
+        }
+
+        syncDraftFromUser();
+        updateUserBadgeUI();
+        renderAll();
+      } catch (err) {
+        console.error("Error cargando datos de Supabase:", err);
+      }
+    }
+
+    function syncDraftFromUser() {
+      draftPredictions = {};
+      if (state.currentUser) {
+        const u = state.users.find(x => x.email.toLowerCase() === state.currentUser.email.toLowerCase());
+        if (u && u.predictions) {
+          draftPredictions = { ...u.predictions };
+        }
+      }
+    }
+
+    function togglePasswordVisibility() {
+      const input = document.getElementById('auth-password');
+      const eye = document.getElementById('auth-password-eye');
+      if (input.type === 'password') {
+        input.type = 'text';
+        eye.className = 'fa-solid fa-eye-slash';
+      } else {
+        input.type = 'password';
+        eye.className = 'fa-solid fa-eye';
+      }
+    }
+
+    function toggleForgotPasswordHelp() {
+      const box = document.getElementById('forgot-password-box');
+      box.classList.toggle('hidden');
+    }
+
+    function openAuthModal(initialMode) {
+      if (initialMode) toggleAuthMode(initialMode);
+      const pwInput = document.getElementById('auth-password');
+      const eye = document.getElementById('auth-password-eye');
+      pwInput.type = 'password';
+      eye.className = 'fa-solid fa-eye';
+      document.getElementById('forgot-password-box').classList.add('hidden');
+      document.getElementById('auth-error').classList.add('hidden');
+      document.getElementById('auth-modal').classList.remove('hidden');
+    }
+
+    function closeAuthModal() {
+      document.getElementById('auth-modal').classList.add('hidden');
+      document.getElementById('auth-error').classList.add('hidden');
+    }
+
+    function previewAvatarUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        const img = new Image();
+        img.onload = function() {
+          const canvas = document.createElement('canvas');
+          const size = 96;
+          canvas.width = size;
+          canvas.height = size;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, size, size);
+          tempAvatarBase64 = canvas.toDataURL('image/jpeg', 0.7);
+          document.getElementById('avatar-file-preview').innerHTML = `<img src="${tempAvatarBase64}" class="w-full h-full object-cover">`;
+        };
+        img.src = evt.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function toggleAuthMode(mode) {
+      authMode = mode;
+      const fieldUsername = document.getElementById('field-username');
+      const fieldAvatar = document.getElementById('field-avatar');
+      const btnLogin = document.getElementById('btn-mode-login');
+      const btnRegister = document.getElementById('btn-mode-register');
+      const submitBtn = document.getElementById('auth-submit-btn');
+      document.getElementById('auth-error').classList.add('hidden');
+
+      if (mode === 'register') {
+        fieldUsername.classList.remove('hidden');
+        fieldAvatar.classList.remove('hidden');
+        btnRegister.className = "w-1/2 pb-2.5 text-center text-sm font-bold border-b-2 border-emerald-500 text-emerald-400";
+        btnLogin.className = "w-1/2 pb-2.5 text-center text-sm font-bold border-b-2 border-transparent text-slate-400";
+        submitBtn.innerText = "Crear Cuenta y Entrar";
+      } else {
+        fieldUsername.classList.add('hidden');
+        fieldAvatar.classList.add('hidden');
+        btnLogin.className = "w-1/2 pb-2.5 text-center text-sm font-bold border-b-2 border-emerald-500 text-emerald-400";
+        btnRegister.className = "w-1/2 pb-2.5 text-center text-sm font-bold border-b-2 border-transparent text-slate-400";
+        submitBtn.innerText = "Iniciar Sesión";
+      }
+    }
+
+    function showAuthError(msg) {
+      const errorDiv = document.getElementById('auth-error');
+      errorDiv.innerText = msg;
+      errorDiv.classList.remove('hidden');
+    }
+
+    async function handleAuthSubmit() {
+      const email = document.getElementById('auth-email').value.trim().toLowerCase();
+      const password = document.getElementById('auth-password').value.trim();
+      const username = document.getElementById('auth-username').value.trim();
+      const submitBtn = document.getElementById('auth-submit-btn');
+
+      if (!email || !email.includes('@')) {
+        showAuthError("Escribe un correo electrónico válido (ej: nombre@gmail.com).");
+        return;
+      }
+      if (!password) {
+        showAuthError("Escribe una contraseña para tu cuenta.");
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.innerText = "Conectando...";
+
+      try {
+        if (authMode === 'register') {
+          if (!username) {
+            showAuthError("Escribe tu Nombre de Usuario o Apodo.");
+            return;
+          }
+          const { data: existingEmail } = await sb.from('porra_users').select('email').eq('email', email).maybeSingle();
+          if (existingEmail) {
+            showAuthError("Ese correo ya está registrado. Pulsa en 'Iniciar Sesión' arriba.");
+            return;
+          }
+          const newUser = { email, username, password, avatar: tempAvatarBase64, predictions: {} };
+          const { error } = await sb.from('porra_users').insert([newUser]);
+          if (error) {
+            showAuthError("Error al registrar usuario: " + error.message);
+            return;
+          }
+          state.currentUser = { email, username, avatar: tempAvatarBase64 };
+        } else {
+          const { data: found, error } = await sb.from('porra_users').select('*').eq('email', email).maybeSingle();
+          if (error || !found) {
+            showAuthError("No existe ninguna cuenta con ese correo. Pulsa en 'Registrarse' arriba.");
+            return;
+          }
+          if (found.password && found.password !== password) {
+            showAuthError("Contraseña incorrecta.");
+            return;
+          }
+          state.currentUser = { email: found.email, username: found.username, avatar: found.avatar || '' };
+        }
+
+        safeSetStorage('porra_user', state.currentUser);
+        await loadCloudData();
+        updateUserBadgeUI();
+        closeAuthModal();
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerText = authMode === 'register' ? "Crear Cuenta y Entrar" : "Iniciar Sesión";
+      }
+    }
+
+    function logout() {
+      state.currentUser = null;
+      draftPredictions = {};
+      try { localStorage.removeItem('porra_user'); } catch (e) {}
+      updateUserBadgeUI();
+      const activeTab = document.getElementById('tab-resultados');
+      if (activeTab && !activeTab.classList.contains('hidden')) {
+        switchTab('mi-apuesta');
+      } else {
+        renderAll();
+      }
+    }
+
+    function updateUserBadgeUI() {
+      const badge = document.getElementById('user-badge');
+      const loginBtn = document.getElementById('header-login-btn');
+      const banner = document.getElementById('auth-banner');
+      const nameSpan = document.getElementById('user-display-name');
+      const avatarDiv = document.getElementById('user-avatar-preview');
+      const adminBtn = document.getElementById('header-admin-btn');
+      const resultsTabBtn = document.getElementById('tab-btn-resultados');
+
+      if (state.currentUser) {
+        badge.classList.remove('hidden');
+        badge.classList.add('flex');
+        loginBtn.classList.add('hidden');
+        banner.classList.add('hidden');
+        nameSpan.innerText = state.currentUser.username;
+        avatarDiv.innerHTML = state.currentUser.avatar ? `<img src="${state.currentUser.avatar}" class="w-full h-full object-cover">` : `👤`;
+
+        if (isAdminUser()) {
+          adminBtn.classList.remove('hidden');
+          adminBtn.classList.add('flex');
+          resultsTabBtn.classList.remove('hidden');
+          resultsTabBtn.classList.add('flex');
+        } else {
+          adminBtn.classList.add('hidden');
+          adminBtn.classList.remove('flex');
+          resultsTabBtn.classList.add('hidden');
+          resultsTabBtn.classList.remove('flex');
+        }
+      } else {
+        badge.classList.add('hidden');
+        badge.classList.remove('flex');
+        loginBtn.classList.remove('hidden');
+        banner.classList.remove('hidden');
+        adminBtn.classList.add('hidden');
+        adminBtn.classList.remove('flex');
+        resultsTabBtn.classList.add('hidden');
+        resultsTabBtn.classList.remove('flex');
+      }
+    }
+
+    function renderAll() {
+      document.getElementById('header-cutoff').innerText = formatCutoffDate(state.settings.cutoffTime);
+      document.getElementById('info-bote').innerText = `${state.settings.bote} €`;
+      document.getElementById('info-target').innerText = `${state.settings.targetAciertos} Aciertos`;
+      document.getElementById('info-count').innerText = `${state.users.length} Jugadores`;
+
+      renderMyPredictionsForm();
+      renderMuroTable();
+      renderClasificacionVivos();
+      if (isAdminUser()) {
+        renderResultsOnlyTab();
+      }
+    }
+
+    function formatCutoffDate(isoStr) {
+      if (!isoStr) return "--";
+      const d = new Date(isoStr);
+      if (isNaN(d.getTime())) return "--";
+      return d.toLocaleDateString('es-ES', { weekday: 'short', hour: '2-digit', minute: '2-digit' });
+    }
+
+    function renderMyPredictionsForm() {
+      const container = document.getElementById('matches-inputs-container');
+      container.innerHTML = '';
+
+      const isLocked = isCutoffClosed();
+      const statusBadge = document.getElementById('cutoff-status-badge');
+      const saveBtn = document.getElementById('save-btn');
+
+      if (isLocked) {
+        statusBadge.className = "px-2.5 py-1 rounded-full text-xs font-semibold bg-red-500/10 text-red-400 border border-red-500/30 self-start sm:self-auto";
+        statusBadge.innerText = "Plazo Cerrado";
+        saveBtn.disabled = true;
+        saveBtn.classList.add('opacity-50', 'cursor-not-allowed');
+      } else {
+        statusBadge.className = "px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 self-start sm:self-auto";
+        statusBadge.innerText = "Plazo Abierto";
+        saveBtn.disabled = false;
+        saveBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+      }
+
+      if (state.matches.length === 0) {
+        container.innerHTML = `<p class="text-xs text-slate-400 text-center py-4">Aún no hay partidos publicados para esta jornada.</p>`;
+        return;
+      }
+
+      state.matches.forEach((m, idx) => {
+        const val = draftPredictions[m.id] || '';
+        const card = document.createElement('div');
+        card.className = "bg-slate-800/60 p-4 rounded-xl border border-slate-700 flex flex-col sm:flex-row items-center justify-between gap-4";
+
+        let inputHTML = '';
+        if (m.type === '1X2') {
+          inputHTML = `
+            <div class="flex items-center gap-2">
+              ${['1', 'X', '2'].map(opt => `
+                <button type="button" ${isLocked ? 'disabled' : ''} onclick="selectOption('${m.id}', '${opt}')" id="opt-${m.id}-${opt}" class="w-11 h-11 rounded-lg font-extrabold text-sm border transition ${val === opt ? 'bg-emerald-500 text-slate-950 border-emerald-400 shadow-md' : 'bg-slate-900 text-slate-300 border-slate-700 hover:border-slate-500'}">
+                  ${opt}
+                </button>
+              `).join('')}
+            </div>
+          `;
+        } else {
+          const parts = val.includes('-') ? val.split('-') : ['', ''];
+          inputHTML = `
+            <div class="flex items-center gap-2">
+              <input type="number" inputmode="numeric" min="0" max="9" placeholder="0" value="${parts[0]}" ${isLocked ? 'disabled' : ''} oninput="updateExactScore('${m.id}')" id="exact-home-${m.id}" class="w-12 h-11 text-center bg-slate-900 border border-slate-700 rounded-lg font-bold text-white focus:outline-none focus:border-emerald-500">
+              <span class="text-slate-400 font-bold">-</span>
+              <input type="number" inputmode="numeric" min="0" max="9" placeholder="0" value="${parts[1]}" ${isLocked ? 'disabled' : ''} oninput="updateExactScore('${m.id}')" id="exact-away-${m.id}" class="w-12 h-11 text-center bg-slate-900 border border-slate-700 rounded-lg font-bold text-white focus:outline-none focus:border-emerald-500">
+            </div>
+          `;
+        }
+
+        card.innerHTML = `
+          <div class="flex items-center gap-3">
+            <span class="text-xs font-bold bg-slate-700 text-slate-300 px-2.5 py-1 rounded-md">#${idx + 1}</span>
+            <span class="font-bold text-white text-sm sm:text-base">${m.home} <span class="text-xs text-slate-400 font-normal">VS</span> ${m.away}</span>
+          </div>
+          ${inputHTML}
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function selectOption(matchId, opt) {
+      if (!state.currentUser) {
+        openAuthModal('register');
+        return;
+      }
+      draftPredictions[matchId] = opt;
+      ['1', 'X', '2'].forEach(o => {
+        const btn = document.getElementById(`opt-${matchId}-${o}`);
+        if (btn) {
+          btn.className = o === opt
+            ? "w-11 h-11 rounded-lg font-extrabold text-sm border transition bg-emerald-500 text-slate-950 border-emerald-400 shadow-md"
+            : "w-11 h-11 rounded-lg font-extrabold text-sm border transition bg-slate-900 text-slate-300 border-slate-700 hover:border-slate-500";
+        }
+      });
+    }
+
+    function updateExactScore(matchId) {
+      if (!state.currentUser) {
+        openAuthModal('register');
+        return;
+      }
+      const home = document.getElementById(`exact-home-${matchId}`).value;
+      const away = document.getElementById(`exact-away-${matchId}`).value;
+      if (home !== '' && away !== '') {
+        draftPredictions[matchId] = `${home}-${away}`;
+      }
+    }
+
+    async function saveUserPredictions() {
+      if (!state.currentUser) {
+        openAuthModal('register');
+        return;
+      }
+      const saveBtn = document.getElementById('save-btn');
+      saveBtn.disabled = true;
+      saveBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Guardando...`;
+
+      try {
+        const { error } = await sb.from('porra_users')
+          .update({ predictions: draftPredictions })
+          .eq('email', state.currentUser.email.toLowerCase());
+
+        if (error) {
+          alert("Error al guardar pronósticos: " + error.message);
+          return;
+        }
+
+        await loadCloudData();
+        const fb = document.getElementById('save-feedback');
+        fb.innerText = "✅ Pronósticos guardados en la nube. Todo el grupo puede verlos ya.";
+        fb.classList.remove('hidden');
+        setTimeout(() => fb.classList.add('hidden'), 3500);
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = `<i class="fa-solid fa-floppy-disk"></i> Guardar Mis Pronósticos`;
+      }
+    }
+
+    function renderMuroTable() {
+      const tableHeadRow = document.getElementById('muro-table-head');
+      while (tableHeadRow.children.length > 4) {
+        tableHeadRow.removeChild(tableHeadRow.lastChild);
+      }
+
+      state.matches.forEach(m => {
+        const th = document.createElement('th');
+        th.className = "py-3 px-3 text-center whitespace-nowrap min-w-[110px]";
+        th.innerHTML = `
+          <div class="font-bold text-slate-200">${m.home} - ${m.away}</div>
+          <div class="text-[10px] text-amber-400 font-mono">Real: ${m.result || '?'}</div>
+        `;
+        tableHeadRow.appendChild(th);
+      });
+
+      const tbody = document.getElementById('muro-table-body');
+      tbody.innerHTML = '';
+
+      state.users.forEach(u => {
+        const stats = calculateUserStats(u);
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-slate-800/40 transition";
+
+        const statusBadge = stats.isVivo
+          ? `<span class="bg-sky-500/20 text-sky-300 border border-sky-500/40 px-2 py-0.5 rounded-full text-[11px] font-bold inline-flex items-center justify-center gap-1"><i class="fa-solid fa-tv text-[10px]"></i> VIVO</span>`
+          : `<span class="bg-red-500/10 text-red-400 border border-red-500/20 px-2 py-0.5 rounded-full text-[11px] font-medium">Fuera</span>`;
+
+        const avatarHTML = u.avatar ? `<img src="${u.avatar}" class="w-6 h-6 rounded-full object-cover border border-slate-600">` : `<div class="w-6 h-6 rounded-full bg-slate-700 flex items-center justify-center text-[10px]">👤</div>`;
+
+        let cellsHTML = `
+          <td class="py-3 px-4 font-bold text-white sticky left-0 bg-slate-900/95 z-10 flex items-center gap-2">
+            ${avatarHTML}
+            <span>${u.username}</span>
+          </td>
+          <td class="py-3 px-3 text-center">${statusBadge}</td>
+          <td class="py-3 px-3 text-center font-bold text-emerald-400">${stats.aciertos}</td>
+          <td class="py-3 px-3 text-center font-bold text-red-400">${stats.fallos}</td>
+        `;
+
+        const preds = u.predictions || {};
+        state.matches.forEach(m => {
+          const userVal = preds[m.id] || '-';
+          const realVal = m.result;
+          let icon = '';
+          if (!realVal || realVal === '') {
+            icon = `<span class="text-slate-400 text-xs">${userVal} <i class="fa-solid fa-clock text-amber-500/70 ml-1"></i></span>`;
+          } else if (userVal === realVal) {
+            icon = `<span class="text-emerald-400 font-bold bg-emerald-500/10 px-2 py-1 rounded border border-emerald-500/30">${userVal} <i class="fa-solid fa-check ml-1"></i></span>`;
+          } else {
+            icon = `<span class="text-red-400 font-semibold bg-red-500/10 px-2 py-1 rounded border border-red-500/20">${userVal} <i class="fa-solid fa-xmark ml-1"></i></span>`;
+          }
+          cellsHTML += `<td class="py-3 px-3 text-center">${icon}</td>`;
+        });
+
+        tr.innerHTML = cellsHTML;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function calculateUserStats(user) {
+      let aciertos = 0;
+      let fallos = 0;
+      let isVivo = true;
+      const preds = user.predictions || {};
+      state.matches.forEach(m => {
+        const userVal = preds[m.id];
+        const realVal = m.result;
+        if (realVal && realVal !== '') {
+          if (userVal === realVal) {
+            aciertos++;
+          } else {
+            fallos++;
+            isVivo = false;
+          }
+        }
+      });
+      return { aciertos, fallos, isVivo };
+    }
+
+    function renderClasificacionVivos() {
+      const container = document.getElementById('vivos-grid');
+      container.innerHTML = '';
+
+      const sortedUsers = [...state.users].sort((a, b) => {
+        const statsA = calculateUserStats(a);
+        const statsB = calculateUserStats(b);
+        if (statsA.isVivo !== statsB.isVivo) return statsB.isVivo ? 1 : -1;
+        return statsB.aciertos - statsA.aciertos;
+      });
+
+      sortedUsers.forEach(u => {
+        const stats = calculateUserStats(u);
+        const card = document.createElement('div');
+        card.className = `p-4 rounded-xl border flex justify-between items-center ${stats.isVivo ? 'bg-slate-800/80 border-sky-500/50 shadow-lg' : 'bg-slate-800/40 border-slate-700/60 opacity-80'}`;
+        const avatarHTML = u.avatar ? `<img src="${u.avatar}" class="w-9 h-9 rounded-full object-cover border border-slate-600">` : `<div class="w-9 h-9 rounded-full bg-slate-700 flex items-center justify-center text-sm">👤</div>`;
+
+        card.innerHTML = `
+          <div class="flex items-center gap-3">
+            ${avatarHTML}
+            <div class="space-y-0.5">
+              <div class="flex items-center gap-2">
+                <span class="font-extrabold text-white text-base">${u.username}</span>
+                ${stats.isVivo ? '<span class="text-[10px] bg-sky-500/20 text-sky-300 border border-sky-400/40 font-bold px-1.5 py-0.5 rounded inline-flex items-center gap-1"><i class="fa-solid fa-tv text-[9px]"></i> VIVO</span>' : ''}
+              </div>
+              <div class="text-xs text-slate-400 flex items-center gap-3">
+                <span class="text-emerald-400 font-semibold"><i class="fa-solid fa-check"></i> ${stats.aciertos} aciertos</span>
+                <span class="text-red-400 font-semibold"><i class="fa-solid fa-xmark"></i> ${stats.fallos} fallos</span>
+              </div>
+            </div>
+          </div>
+          <div class="text-right">
+            <span class="text-2xl font-black ${stats.isVivo ? 'text-sky-400' : 'text-slate-500'}">
+              ${stats.aciertos}/${state.settings.targetAciertos}
+            </span>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function renderResultsOnlyTab() {
+      const container = document.getElementById('results-only-container');
+      const badge = document.getElementById('results-cutoff-badge');
+      container.innerHTML = '';
+
+      const closed = isCutoffClosed();
+      if (state.settings.cutoffTime) {
+        badge.className = closed
+          ? "px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 self-start sm:self-auto"
+          : "px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-300 border border-amber-500/30 self-start sm:self-auto";
+        badge.innerText = closed ? "Partidos cerrados (listos para resolver)" : `Cierra: ${formatCutoffDate(state.settings.cutoffTime)}`;
+      } else {
+        badge.className = "px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-800 text-slate-300 border border-slate-700 self-start sm:self-auto";
+        badge.innerText = "Sin hora de cierre fijada";
+      }
+
+      if (state.matches.length === 0) {
+        container.innerHTML = `<p class="text-xs text-slate-400 text-center py-4">No hay partidos guardados en esta jornada.</p>`;
+        return;
+      }
+
+      state.matches.forEach((m, idx) => {
+        const row = document.createElement('div');
+        row.className = "bg-slate-800/60 p-4 rounded-xl border border-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3";
+        const typeLabel = m.type === 'EXACT' ? 'Marcador exacto (ej. 2-1)' : 'Signo (1, X o 2)';
+        const placeholderText = m.type === 'EXACT' ? 'Ej: 2-1' : '1 / X / 2';
+
+        row.innerHTML = `
+          <div class="flex items-center gap-3">
+            <span class="text-xs font-bold bg-slate-700 text-slate-300 px-2.5 py-1 rounded-md">#${idx + 1}</span>
+            <div>
+              <div class="font-bold text-white text-sm sm:text-base">${m.home} <span class="text-xs text-slate-400 font-normal">VS</span> ${m.away}</div>
+              <div class="text-[11px] text-slate-400">${typeLabel}</div>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <label for="res-only-${m.id}" class="text-xs font-semibold text-amber-300">Resultado:</label>
+            <input type="text" id="res-only-${m.id}" value="${m.result || ''}" placeholder="${placeholderText}" class="w-28 bg-slate-900 border border-amber-500/40 rounded-lg px-3 py-2 text-sm text-amber-300 text-center font-bold focus:outline-none focus:border-amber-400">
+          </div>
+        `;
+        container.appendChild(row);
+      });
+    }
+
+    async function saveResultsOnly() {
+      if (!isAdminUser()) return;
+      const btn = document.getElementById('btn-save-results-tab');
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Guardando...`;
+
+      try {
+        for (const m of state.matches) {
+          const inputEl = document.getElementById(`res-only-${m.id}`);
+          const newResult = inputEl ? inputEl.value.trim() : (m.result || '');
+          const { error } = await sb.from('porra_matches')
+            .update({ result: newResult })
+            .eq('id', m.id);
+          if (error) {
+            alert("Error guardando resultado del partido " + m.home + " - " + m.away + ": " + error.message);
+            return;
+          }
+        }
+
+        await loadCloudData();
+        const fb = document.getElementById('results-save-feedback');
+        fb.innerText = "✅ Resultados guardados sin modificar ningún partido. Clasificación y muro actualizados.";
+        fb.classList.remove('hidden');
+        setTimeout(() => fb.classList.add('hidden'), 3500);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<i class="fa-solid fa-check-double"></i> Guardar Resultados`;
+      }
+    }
+
+    function switchTab(tabId) {
+      if (tabId === 'resultados' && !isAdminUser()) {
+        tabId = 'mi-apuesta';
+      }
+      ['mi-apuesta', 'muro', 'clasificacion', 'resultados'].forEach(t => {
+        const section = document.getElementById(`tab-${t}`);
+        const btn = document.getElementById(`tab-btn-${t}`);
+        if (section) section.classList.add('hidden');
+        if (btn && !btn.classList.contains('hidden')) {
+          btn.className = "pb-3 text-sm font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2 whitespace-nowrap";
+        }
+      });
+      const activeSection = document.getElementById(`tab-${tabId}`);
+      const activeBtn = document.getElementById(`tab-btn-${tabId}`);
+      if (activeSection) activeSection.classList.remove('hidden');
+      if (activeBtn) {
+        activeBtn.classList.remove('hidden');
+        activeBtn.classList.add('flex');
+        activeBtn.className = "pb-3 text-sm font-bold border-b-2 border-emerald-500 text-emerald-400 flex items-center gap-2 whitespace-nowrap";
+      }
+      loadCloudData();
+    }
+
+    function openAdminModal() {
+      if (!isAdminUser()) return;
+      document.getElementById('admin-modal').classList.remove('hidden');
+      document.getElementById('admin-bote-input').value = state.settings.bote;
+      document.getElementById('admin-target-input').value = state.settings.targetAciertos;
+      document.getElementById('admin-cutoff-input').value = state.settings.cutoffTime;
+      renderAdminMatchesList();
+    }
+
+    function closeAdminModal() {
+      document.getElementById('admin-modal').classList.add('hidden');
+    }
+
+    function renderAdminMatchesList() {
+      const container = document.getElementById('admin-matches-list');
+      container.innerHTML = '';
+      state.matches.forEach((m, idx) => {
+        const item = document.createElement('div');
+        item.className = "bg-slate-900 p-3 rounded-lg border border-slate-700 flex flex-col sm:flex-row items-center gap-2";
+        item.innerHTML = `
+          <span class="text-xs font-bold text-slate-400">#${idx + 1}</span>
+          <input type="text" id="admin-home-${m.id}" value="${m.home}" placeholder="Local" class="bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-white w-full sm:flex-1">
+          <span class="text-xs text-slate-500 font-bold">VS</span>
+          <input type="text" id="admin-away-${m.id}" value="${m.away}" placeholder="Visitante" class="bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-white w-full sm:flex-1">
+          <select id="admin-type-${m.id}" class="bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-white w-full sm:w-auto">
+            <option value="1X2" ${m.type === '1X2' ? 'selected' : ''}>Signo (1X2)</option>
+            <option value="EXACT" ${m.type === 'EXACT' ? 'selected' : ''}>Resultado Exacto</option>
+          </select>
+          <input type="text" id="admin-result-${m.id}" value="${m.result || ''}" placeholder="Real (Ej: 1)" class="bg-slate-800 border border-amber-500/40 rounded px-2 py-1 text-xs text-amber-300 w-full sm:w-28 text-center font-bold">
+          <button type="button" onclick="deleteMatch('${m.id}')" class="text-red-400 hover:text-red-300 text-xs px-2 py-1">
+            <i class="fa-solid fa-trash"></i>
+          </button>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    function addNewMatchField() {
+      state.matches.push({ id: 'm_' + Date.now(), home: 'Equipo A', away: 'Equipo B', type: '1X2', result: '', sort_order: state.matches.length + 1 });
+      renderAdminMatchesList();
+    }
+
+    function deleteMatch(matchId) {
+      state.matches = state.matches.filter(m => m.id !== matchId);
+      renderAdminMatchesList();
+    }
+
+    async function saveGeneralSettings() {
+      if (!isAdminUser()) return;
+      const btn = document.getElementById('btn-save-settings');
+      btn.disabled = true;
+      btn.innerText = "Guardando...";
+
+      const bote = parseFloat(document.getElementById('admin-bote-input').value) || 0;
+      const targetAciertos = parseInt(document.getElementById('admin-target-input').value) || 3;
+      const cutoffTime = document.getElementById('admin-cutoff-input').value;
+
+      const { error } = await sb.from('porra_settings').upsert({
+        id: 1,
+        bote: bote,
+        target_aciertos: targetAciertos,
+        cutoff_time: cutoffTime
+      });
+
+      btn.disabled = false;
+      btn.innerText = "Guardar Ajustes Generales";
+
+      if (error) {
+        alert("Error guardando ajustes: " + error.message);
+        return;
+      }
+
+      await loadCloudData();
+      closeAdminModal();
+    }
+
+    async function saveAdminMatches() {
+      if (!isAdminUser()) return;
+      const btn = document.getElementById('btn-save-matches');
+      btn.disabled = true;
+      btn.innerText = "Guardando en la nube...";
+
+      const updatedMatches = state.matches.map((m, idx) => {
+        const homeInput = document.getElementById(`admin-home-${m.id}`);
+        const awayInput = document.getElementById(`admin-away-${m.id}`);
+        const typeInput = document.getElementById(`admin-type-${m.id}`);
+        const resultInput = document.getElementById(`admin-result-${m.id}`);
+        return {
+          id: m.id,
+          home: homeInput ? homeInput.value.trim() : m.home,
+          away: awayInput ? awayInput.value.trim() : m.away,
+          type: typeInput ? typeInput.value : m.type,
+          result: resultInput ? resultInput.value.trim() : m.result,
+          sort_order: idx + 1
+        };
+      });
+
+      await sb.from('porra_matches').delete().neq('id', '');
+      if (updatedMatches.length > 0) {
+        const { error } = await sb.from('porra_matches').insert(updatedMatches);
+        if (error) {
+          btn.disabled = false;
+          btn.innerText = "Guardar Partidos y Resultados Finales";
+          alert("Error guardando partidos: " + error.message);
+          return;
+        }
+      }
+
+      btn.disabled = false;
+      btn.innerText = "Guardar Partidos y Resultados Finales";
+      await loadCloudData();
+      closeAdminModal();
+    }
+  </script>
+</body>
+</html>
